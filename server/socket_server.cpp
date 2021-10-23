@@ -1,38 +1,30 @@
-//Example code: A simple server side code, which echos back the received message.
-//Handle multiple socket connections with select and fd_set on Linux 
+#include "socket_server.h"
+#include <iostream>
 #include <stdio.h> 
 #include <string.h>   //strlen 
 #include <stdlib.h> 
 #include <errno.h> 
 #include <unistd.h>   //close 
 #include <arpa/inet.h>    //close 
-#include <sys/types.h> 
-#include <sys/socket.h> 
-#include <netinet/in.h> 
+#include <sys/socket.h>
 #include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros 
      
 #define TRUE   1 
 #define FALSE  0 
 #define PORT 8888
+#define PROTOCOL_VERSION    (char)0x01
 
-class SocketServer{
-    private:
-        int master_socket;
-        int addrlen;
-        int client_socket[30]; 
-        int max_clients;
-        struct sockaddr_in address;
-        //set of socket descriptors 
-        fd_set readfds;
-    public:
-        SocketServer();
-        void start();
-        bool check_new_connection();
-        void proccess_data();
-        void eventloop();
-};
+using namespace std;
 
-SocketServer::SocketServer(){
+void increment_num(double num, char *buff, size_t size){
+    for (int i=0; i<size; i++)
+    {
+        num++;
+        memcpy(&buff[i * sizeof(double)], &num, sizeof(double));
+    }
+}
+
+SocketServer::SocketServer(int max_clients_num, char* (*response_handler)(char*)){
     int opt = TRUE;  
     max_clients = 30; 
      
@@ -105,17 +97,7 @@ bool SocketServer::check_new_connection(){
         //inform user of socket number - used in send and receive commands 
         printf("New connection , socket fd is %d , ip is : %s , port : %d"
                 "\n" , new_socket , inet_ntoa(address.sin_addr) , ntohs
-                (address.sin_port));  
-        
-
-        char message[] = "Hello. It`s me\r\n";
-        //send new connection greeting message 
-        if( send(new_socket, message, strlen(message), 0) != strlen(message) )  
-        {  
-            perror("send");  
-        }  
-                
-        puts("Welcome message sent successfully");  
+                (address.sin_port)); 
                 
         //add new socket to array of sockets 
         for (int i = 0; i < max_clients; i++)  
@@ -134,8 +116,8 @@ bool SocketServer::check_new_connection(){
 }
 
 void SocketServer::proccess_data(){    
-    char buffer[1025];  //data buffer of 1K 
-    ssize_t valread; 
+    char receive_buffer[1025];  //data buffer of 1K 
+    ssize_t bytes_read_num; 
     for (int i = 0; i < max_clients; i++)  
     {  
         int sd = client_socket[i];  
@@ -144,7 +126,7 @@ void SocketServer::proccess_data(){
         {  
             //Check if it was for closing , and also read the 
             //incoming message 
-            if ((valread = read( sd , buffer, 1024)) == 0)  
+            if ((bytes_read_num = read( sd , receive_buffer, 1024)) == 0)  
             {  
                 //Somebody disconnected , get his details and print 
                 getpeername(sd , (struct sockaddr*)&address , \
@@ -157,13 +139,18 @@ void SocketServer::proccess_data(){
                 client_socket[i] = 0;  
             }  
                     
-            //Echo back the message that came in 
+            //send response
             else 
-            {  
-                //set the string terminating NULL byte on the end 
-                //of the data read 
-                buffer[valread] = '\0';  
-                send(sd , buffer , strlen(buffer) , 0 );  
+            {
+                // receive_buffer[bytes_read_num] = '\0';  
+                // send(sd , receive_buffer , strlen(receive_buffer) , 0 );
+                double num;
+                memcpy((void *)&num, receive_buffer, sizeof(num));
+                cout << "received num: " << num << endl;
+#define DOUBLE_BUFF_SIZE   100000
+                char send_buffer[sizeof(double)*DOUBLE_BUFF_SIZE];
+                increment_num(num, send_buffer, DOUBLE_BUFF_SIZE);
+                send(sd, send_buffer, sizeof(double)*DOUBLE_BUFF_SIZE, 0);
             }  
         }  
     }  
@@ -205,14 +192,7 @@ void SocketServer::eventloop(){
               
         if (!check_new_connection()){
             proccess_data();
-        } 
+        }
+        sleep(1);
     }  
-}
-     
-int main(int argc , char *argv[])  
-{   
-    SocketServer server = SocketServer();
-    server.start();
-
-    return 0;
 }
