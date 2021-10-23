@@ -16,17 +16,10 @@
 
 using namespace std;
 
-void increment_num(double num, char *buff, size_t size){
-    for (int i=0; i<size; i++)
-    {
-        num++;
-        memcpy(&buff[i * sizeof(double)], &num, sizeof(double));
-    }
-}
-
-SocketServer::SocketServer(int max_clients_num, char* (*response_handler)(char*)){
+SocketServer::SocketServer(int max_clients_num, response_handler handler){
     int opt = TRUE;  
-    max_clients = 30; 
+    max_clients = max_clients_num;
+    user_handler = handler;
      
     //initialise all client_socket[] to 0 so not checked 
     for (int i = 0; i < max_clients; i++)  
@@ -144,13 +137,9 @@ void SocketServer::proccess_data(){
             {
                 // receive_buffer[bytes_read_num] = '\0';  
                 // send(sd , receive_buffer , strlen(receive_buffer) , 0 );
-                double num;
-                memcpy((void *)&num, receive_buffer, sizeof(num));
-                cout << "received num: " << num << endl;
-#define DOUBLE_BUFF_SIZE   100000
-                char send_buffer[sizeof(double)*DOUBLE_BUFF_SIZE];
-                increment_num(num, send_buffer, DOUBLE_BUFF_SIZE);
-                send(sd, send_buffer, sizeof(double)*DOUBLE_BUFF_SIZE, 0);
+                MessageToSend message = user_handler(receive_buffer);
+                char *send_buffer = message.buff;
+                send(sd, send_buffer, message.len, 0);
             }  
         }  
     }  
@@ -193,6 +182,5 @@ void SocketServer::eventloop(){
         if (!check_new_connection()){
             proccess_data();
         }
-        sleep(1);
     }  
 }
