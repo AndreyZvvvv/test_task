@@ -6,13 +6,15 @@
 #include <string.h>
 
 #define PORT 8888
-#define MAX_READ_SIZE   1000000
+#define MAX_READ_SIZE   10000000
 char buffer[MAX_READ_SIZE] = {0};
 
 using namespace std;
 
 void debug_decode_buffer(char *buf, size_t size){
     cout << "debug received array:" << endl;
+    cout << "version: " << buf[0] << endl;
+    cout << "message_length: " << *((ssize_t*)&buf[1]) << endl;
     for (int i=0; i<size; i++){
         double num;
         memcpy(&num, &buf[i*sizeof(double)], sizeof(double));
@@ -66,16 +68,23 @@ void SocketClient::interact_with_server(){
     printf("Number sent\n");
 
     char *buff_ptr = buffer;
-    ssize_t bytes_read_num;
+    ssize_t bytes_read_total = 0;
+    ssize_t bytes_read_at_the_iteration;
     ssize_t message_len = 0;
-    while ((bytes_read_num = read( sock , buff_ptr, MAX_READ_SIZE)) > 0){
-        buff_ptr += bytes_read_num;
-        message_len += bytes_read_num;
-        if (*(buff_ptr - 1) == '!'){
-            break;
+    int cnt = 0;
+    while ((bytes_read_at_the_iteration = read( sock , buff_ptr, MAX_READ_SIZE)) > 0){
+        //bytes 1-8 represents message length, it is read at first iteration
+        if (cnt++ == 0){
+            message_len = *(ssize_t*)&buff_ptr[1];
+            cout << "message_len = " << message_len << endl;
         }
+        buff_ptr += bytes_read_at_the_iteration;
+        bytes_read_total += bytes_read_at_the_iteration;
+        if (bytes_read_total >= message_len)
+            break;
     }
-    cout << "message_len = " << message_len << endl;
+    cout << "read count: " << cnt << endl;
+    cout << "bytes_read_total: " << bytes_read_total << endl;
     close(sock);
 }
    

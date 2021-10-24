@@ -126,8 +126,8 @@ void SocketServer::proccess_data(){
         int sd = client_socket[i];  
                 
         if (FD_ISSET( sd , &readfds))  
-        {  
-            //Check if it was for closing , and also read the 
+        {
+            //Check if it was for closing , and also read the
             //incoming message
             bytes_read_num = read( sd , receive_buffer, 1024);
             if (bytes_read_num == 0)
