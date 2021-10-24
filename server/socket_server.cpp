@@ -108,6 +108,16 @@ bool SocketServer::check_new_connection(){
     return false;
 }
 
+void SocketServer::close_connection(int client_sock){
+    getpeername(client_sock , (struct sockaddr*)&address , \
+        (socklen_t*)&addrlen);  
+    printf("Host disconnected , ip %s , port %d \n" , 
+            inet_ntoa(address.sin_addr) , ntohs(address.sin_port));  
+            
+    //Close the socket and mark as 0 in list for reuse 
+    close( client_sock );
+}
+
 void SocketServer::proccess_data(){    
     char receive_buffer[1025];  //data buffer of 1K 
     ssize_t bytes_read_num; 
@@ -118,25 +128,18 @@ void SocketServer::proccess_data(){
         if (FD_ISSET( sd , &readfds))  
         {  
             //Check if it was for closing , and also read the 
-            //incoming message 
-            if ((bytes_read_num = read( sd , receive_buffer, 1024)) == 0)  
-            {  
+            //incoming message
+            bytes_read_num = read( sd , receive_buffer, 1024);
+            if (bytes_read_num == 0)
+            {
                 //Somebody disconnected , get his details and print 
-                getpeername(sd , (struct sockaddr*)&address , \
-                    (socklen_t*)&addrlen);  
-                printf("Host disconnected , ip %s , port %d \n" , 
-                        inet_ntoa(address.sin_addr) , ntohs(address.sin_port));  
-                        
-                //Close the socket and mark as 0 in list for reuse 
-                close( sd );  
+                close_connection(sd);
                 client_socket[i] = 0;  
-            }  
-                    
+            }         
             //send response
             else 
             {
-                // receive_buffer[bytes_read_num] = '\0';  
-                // send(sd , receive_buffer , strlen(receive_buffer) , 0 );
+                //proccessing message by the user application
                 MessageToSend message = user_handler(receive_buffer);
                 char *send_buffer = message.buff;
                 send(sd, send_buffer, message.len, 0);

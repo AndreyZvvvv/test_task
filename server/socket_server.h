@@ -21,6 +21,7 @@ class SocketServer{
         //function to hadle and proccess income data
         response_handler user_handler;
         bool check_new_connection();
+        void close_connection(int client_sock);
         void proccess_data();
         void eventloop();
     public:
