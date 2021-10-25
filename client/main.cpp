@@ -5,8 +5,8 @@
 #include <unistd.h>
 #include <string.h>
 #include "socket_client.h"
+#include "files.h"
 
-#define PORT 8888
 #define MAX_READ_SIZE   10000000
 char buffer[MAX_READ_SIZE] = {0};
 
@@ -53,7 +53,19 @@ void SocketClient::interact_with_server(){
    
 int main(int argc, char const *argv[])
 {
-    SocketClient client = SocketClient("127.0.0.1", 8888);
-    client.start();
+    try{
+        File config_file = File("client.conf");
+        string addr = config_file.get_value("connection_address");
+        string port_str = config_file.get_value("connection_port");
+        string num_str = config_file.get_value("number");
+        int port = stoi(port_str);
+        double num = stod(num_str);
+        SocketClient client = SocketClient(addr, port);
+        client.start();
+    }
+    catch(exception &e){
+        cout << "Error. " << e.what() << endl;
+    }
+
     return 0;
 }

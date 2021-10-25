@@ -13,6 +13,7 @@ class SocketServer{
     private:
         int master_socket;
         int addrlen;
+        int port;
         int client_socket[30]; 
         int max_clients;
         struct sockaddr_in address;
@@ -25,6 +26,6 @@ class SocketServer{
         void proccess_data();
         void eventloop();
     public:
-        SocketServer(int max_clients_num, response_handler handler);
+        SocketServer(int port, int max_clients_num, response_handler handler);
         void start();
 };

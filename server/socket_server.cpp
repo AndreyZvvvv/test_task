@@ -10,16 +10,16 @@
 #include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros 
      
 #define TRUE   1 
-#define FALSE  0 
-#define PORT 8888
+#define FALSE  0
 #define PROTOCOL_VERSION    (char)0x01
 
 using namespace std;
 
-SocketServer::SocketServer(int max_clients_num, response_handler handler){
+SocketServer::SocketServer(int server_port, int max_clients_num, response_handler handler){
     int opt = TRUE;  
     max_clients = max_clients_num;
     user_handler = handler;
+    port = server_port;
      
     //initialise all client_socket[] to 0 so not checked 
     for (int i = 0; i < max_clients; i++)  
@@ -28,7 +28,7 @@ SocketServer::SocketServer(int max_clients_num, response_handler handler){
     }  
          
     //create a master socket 
-    if( (master_socket = socket(AF_INET , SOCK_STREAM , 0)) == 0)  
+    if( (master_socket = socket(AF_INET , SOCK_STREAM , 0)) == 0)
     {  
         perror("socket failed");  
         exit(EXIT_FAILURE);  
@@ -48,15 +48,15 @@ void SocketServer::start(){
     //type of socket created 
     address.sin_family = AF_INET;  
     address.sin_addr.s_addr = INADDR_ANY;  
-    address.sin_port = htons( PORT );  
+    address.sin_port = htons( port );  
          
-    //bind the socket to localhost port 8888 
+    //bind the socket to localhost
     if (bind(master_socket, (struct sockaddr *)&address, sizeof(address))<0)  
     {  
         perror("bind failed");  
         exit(EXIT_FAILURE);  
     }  
-    printf("Listener on port %d \n", PORT);  
+    printf("Listener on port %d \n", port);  
          
     //try to specify maximum of 3 pending connections for the master socket 
     if (listen(master_socket, 3) < 0)  

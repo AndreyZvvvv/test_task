@@ -1,4 +1,4 @@
 all:
-	g++ socket_server.cpp main.cpp -o server
+	g++ socket_server.cpp main.cpp -lfiles -I../files_module/ -L../files_module/ -o server
 debug:
-	g++ socket_server.cpp main.cpp -o server -g
+	g++ socket_server.cpp main.cpp -lfiles -I../files_module/ -L../files_module/ -o server -g
