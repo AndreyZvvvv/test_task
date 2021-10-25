@@ -1,4 +1,4 @@
 all:
-	g++ socket_client.cpp -o client
+	g++ socket_client.cpp main.cpp -o client
 debug:
-	g++ socket_client.cpp -o client -g
+	g++ socket_client.cpp main.cpp -o client -g
