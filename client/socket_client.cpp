@@ -63,15 +63,12 @@ void SocketClient::read_in_chunks(){
         //bytes 1-8 represents message length, it is read at first iteration
         if (cnt++ == 0){
             message_len = *(ssize_t*)&buff_ptr[1];
-            cout << "message_len = " << message_len << endl;
         }
         buff_ptr += bytes_read_at_the_iteration;
         bytes_read_total += bytes_read_at_the_iteration;
         if (bytes_read_total >= message_len)
             break;
     }
-    cout << "read count: " << cnt << endl;
-    cout << "bytes_read_total: " << bytes_read_total << endl;
 }
 
 void SocketClient::start(){

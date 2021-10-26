@@ -32,8 +32,17 @@ int main(int argc, char const *argv[])
         client.start();
         sleep(3);
         client.send_message((char *)&num, sizeof(num));
-        printf("Number sent\n");
-        debug_decode_buffer(client.get_message());
+        cout << "Number sent" << endl;
+        char * received_message = client.get_message();
+        int protocol = (int)received_message[0];
+        ssize_t message_len = *(ssize_t*)&received_message[1];
+        cout << "A message received from server" << endl <<
+            "protocol version: " << protocol << endl <<
+            "message length: " << message_len << endl;
+        File data_file("receive.dat");
+        ssize_t offset = 1 + sizeof(ssize_t);
+        data_file.write_binary_data(&received_message[offset], message_len-offset);
+        cout << "Received data are written to receive.dat" << endl;
     }
     catch(exception &e){
         cout << "Error. " << e.what() << endl;

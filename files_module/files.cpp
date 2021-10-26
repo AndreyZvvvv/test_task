@@ -2,7 +2,9 @@
 #include <iostream>
 #include <fstream> 
 
-File::File(const char* path){
+File::File(const char* path)
+{
+    file_path = path;
     ifstream t(path);
     if (t.good())
         file_buffer << t.rdbuf();
@@ -31,4 +33,18 @@ string File::get_value(const char* key_to_find){
     }
     cout << key_to_find << " is not found" << endl;
     return string("\0");
+}
+
+void File::write_binary_data(char *buf, int size){
+    ofstream wf(file_path, ios::out | ios::binary);
+    if(!wf) {
+        cout << "Cannot open file!" << endl;
+    }
+    else{
+        wf.write(buf, size);
+    }
+    wf.close();
+    if(!wf.good()) {
+        cout << "Error occurred at writing time!" << endl;
+    }
 }
