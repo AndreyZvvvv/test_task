@@ -9,6 +9,12 @@
 
 using namespace std;
 
+#define PROTOCOL_VERSION    (unsigned char)0x02
+#define REQUEST_SEND_NUMBER 0x01
+#define REQUEST_PACKET_SIZE 1+1+sizeof(double)
+#define RESPONSE_SUCCESS    0x02
+#define RESPONSE_ERROR      0x03
+
 void debug_decode_buffer(char *buf){
     cout << "debug received array:" << endl;
     cout << "version: " << (int)buf[0] << endl;
@@ -31,18 +37,27 @@ int main(int argc, char const *argv[])
         SocketClient client = SocketClient(addr, port);
         client.start();
         sleep(3);
-        client.send_message((char *)&num, sizeof(num));
+        char send_message[10] = {PROTOCOL_VERSION, REQUEST_SEND_NUMBER};
+        memcpy(&send_message[2], &num, sizeof(num));
+        client.send_message(send_message, REQUEST_PACKET_SIZE);
         cout << "Number sent" << endl;
         char * received_message = client.get_message();
         int protocol = (int)received_message[0];
-        ssize_t message_len = *(ssize_t*)&received_message[1];
+        int message_type = (int)received_message[1];
+        ssize_t message_len = *(ssize_t*)&received_message[2];
         cout << "A message received from server" << endl <<
             "protocol version: " << protocol << endl <<
+            "message type: " << message_type << endl <<
             "message length: " << message_len << endl;
-        File data_file("receive.dat");
-        ssize_t offset = 1 + sizeof(ssize_t);
-        data_file.write_binary_data(&received_message[offset], message_len-offset);
-        cout << "Received data are written to receive.dat" << endl;
+        if (message_type == RESPONSE_SUCCESS){
+            File data_file("receive.dat");
+            ssize_t offset = 1 + 1 + sizeof(ssize_t);
+            data_file.write_binary_data(&received_message[offset], message_len-offset);
+            cout << "Received data are written to receive.dat" << endl;
+        }
+        else{
+            cout << "ERROR received from server. Conflicting protocol version." << endl;
+        }
     }
     catch(exception &e){
         cout << "Error. " << e.what() << endl;
