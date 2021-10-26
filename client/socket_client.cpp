@@ -3,6 +3,10 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <functional>
+#include <fcntl.h>
+
+sem_t read_semaphore;
 
 using namespace std;
 
@@ -14,8 +18,18 @@ void* read_thread_func(void* arg){
     cout << "SocketClient Read thread has started" << endl;
     while(true){
         client->read_in_chunks();
+        sem_post(&read_semaphore);
     }
     pthread_exit(NULL);
+}
+
+char* SocketClient::get_message(){
+    sem_wait(&read_semaphore);
+    return buffer;
+}
+
+void SocketClient::send_message(char *buf, int size){
+    send(sock , buf , size, 0 );
 }
 
 SocketClient::SocketClient(string &ip, int port){
@@ -34,6 +48,9 @@ SocketClient::SocketClient(string &ip, int port){
         printf("\nInvalid address/ Address not supported \n");
         return;
     }
+
+    // read_semaphore = sem_open("/read_sem", O_CREAT, 0660, 0);
+    sem_init(&read_semaphore, 0, 0);
 }
 
 void SocketClient::read_in_chunks(){
@@ -67,4 +84,9 @@ void SocketClient::start(){
         pthread_t read_thread;
         pthread_create(&read_thread, NULL, read_thread_func, this);
     }
+}
+
+SocketClient::~SocketClient(){
+    close(sock);
+    sem_destroy(&read_semaphore);
 }

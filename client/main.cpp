@@ -17,19 +17,6 @@ void debug_decode_buffer(char *buf){
     cout << "50000: " << *((double*)&buf[9 + (50000-1)*sizeof(double)]) << endl;
     cout << "last: " << *((double*)&buf[9 + (1000000-1)*sizeof(double)]) << endl;
 }
-
-void SocketClient::interact_with_server(){
-    sleep(3);
-    double num = 56.78;
-    send(sock , &num , sizeof(num) , 0 );
-    printf("Number sent\n");
-
-    sleep(10);
-    
-    // debug_decode_buffer(buffer);
-
-    close(sock);
-}
    
 int main(int argc, char const *argv[])
 {
@@ -43,7 +30,10 @@ int main(int argc, char const *argv[])
 
         SocketClient client = SocketClient(addr, port);
         client.start();
-        client.interact_with_server();
+        sleep(3);
+        client.send_message((char *)&num, sizeof(num));
+        printf("Number sent\n");
+        debug_decode_buffer(client.get_message());
     }
     catch(exception &e){
         cout << "Error. " << e.what() << endl;
